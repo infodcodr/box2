@@ -1,8 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
-use Ratchet\MessageComponentInterface;
+use App\Message;
 use Ratchet\ConnectionInterface;
+use Ratchet\MessageComponentInterface;
+use Illuminate\Support\Facades\Request;
 
 /**
  * @author Rohit Dhiman | @aimflaiims
@@ -67,20 +69,28 @@ class WebSocketController implements MessageComponentInterface
                         }
                     }
                 break;
+                case "loaddata":
+                     $loadMessage = $this->loadMessage($data->userId);
+                     $this->users[$conn->resourceId]->send(json_encode($loadMessage));
+
+                break;
                 case "message":
-                    //
+                    $this->store($msg);
                     if ( isset($this->userresources[$data->to]) ) {
                         foreach ($this->userresources[$data->to] as $key => $resourceId) {
                             if ( isset($this->users[$resourceId]) ) {
+
                                 $this->users[$resourceId]->send($msg);
                             }
                         }
+
                         $conn->send(json_encode($this->userresources[$data->to]));
                     }
 
                     if (isset($this->userresources[$data->from])) {
                         foreach ($this->userresources[$data->from] as $key => $resourceId) {
                             if ( isset($this->users[$resourceId])  && $conn->resourceId != $resourceId ) {
+
                                 $this->users[$resourceId]->send($msg);
                             }
                         }
@@ -109,6 +119,7 @@ class WebSocketController implements MessageComponentInterface
                                     "groupchat" => '{command: "groupchat", message: "hello glob", channel: "global"}',
                                     "message" => '{command: "message", to: "1", message: "it needs xss protection"}',
                                     "register" => '{command: "register", userId: 9}',
+                                    "loaddata" => '{command: "loaddata", userId: 9}',
                                 ],
                     );
                     $conn->send(json_encode($example));
@@ -137,5 +148,40 @@ class WebSocketController implements MessageComponentInterface
     {
         echo "An error has occurred: {$e->getMessage()}\n";
         $conn->close();
+    }
+
+    public function store($data)
+    {
+        \Log::info(json_encode($data));
+        try{
+            $data= json_decode($data,true);
+            $message = New Message();
+            $message->from = $data['from'];
+            $message->to = $data['to'];
+            $message->message = $data['message'];
+            $message->command = $data['command'];
+            $message->type = 'message';
+            if(isset($data['type'])){
+                $message->chattype = $data['type'];
+            }
+            $message->save();
+			return $message;
+        }catch(\Exception $e)
+        {
+            \Log::info($e);
+        }
+    }
+
+    public function loadMessage($id)
+    {
+         try{
+            $message = New Message();
+
+            $message = $message->with('user','touser')->where('from',$id)->orWhere('to',$id)->distinct()->get();
+            return $message;
+        }catch(\Exception $e)
+        {
+            \Log::info($e);
+        }
     }
 }

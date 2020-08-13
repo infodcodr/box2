@@ -55,9 +55,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Setting::class);
     }
-    public function timeline()
+    public function grouo()
     {
-        return $this->hasOne(TimeLine::class);
+        return $this->hasMany(Group::class);
     }
     public function block()
     {

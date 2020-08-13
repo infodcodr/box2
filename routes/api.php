@@ -31,3 +31,25 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('notes/{id}/update', 'NotesController@update');
     Route::post('notes/{id}/remove', 'NotesController@destroy');
 });
+
+Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('group', 'GroupController@store');
+});
+
+Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('group/member', 'GroupUserController@store');
+});
+
+Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('group/admin', 'GroupAdminController@store');
+});
+
+Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('block', 'BlockController@store');
+});
+
+Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('message', 'MessageController@index');
+    Route::post('message/store', 'MessageController@store');
+    Route::post('message/{id}', 'MessageController@show');
+});
